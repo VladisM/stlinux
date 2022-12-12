@@ -3010,7 +3010,7 @@
     (property "Reference" "U303" (id 0) (at 228.0794 36.195 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "IS42S16160B-7TL" (id 1) (at 228.0794 38.735 0)
+    (property "Value" "IS42S16160J" (id 1) (at 228.0794 38.735 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "Package_SO:TSOP-II-54_22.2x10.16mm_P0.8mm" (id 2) (at 226.06 109.22 0)

@@ -677,13 +677,17 @@
         "microvia_drill": 0.1,
         "name": "Extension",
         "nets": [
+          "/Low level IO/EXT.PA10",
+          "/Low level IO/EXT.PA11",
+          "/Low level IO/EXT.PA12",
+          "/Low level IO/EXT.PA8",
+          "/Low level IO/EXT.PA9",
           "/Low level IO/EXT.PB10",
           "/Low level IO/EXT.PB11",
           "/Low level IO/EXT.PB12",
           "/Low level IO/EXT.PB13",
           "/Low level IO/EXT.PB14",
-          "/Low level IO/EXT.PB15",
-          "/Low level IO/EXT.PC6"
+          "/Low level IO/EXT.PB15"
         ],
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "schematic_color": "rgba(0, 0, 0, 0.000)",
@@ -898,8 +902,6 @@
         "microvia_drill": 0.1,
         "name": "UART",
         "nets": [
-          "/MCU/UART1.RX",
-          "/MCU/UART1.TX",
           "/UART/VSENSE"
         ],
         "pcb_color": "rgba(0, 0, 0, 0.000)",
@@ -958,7 +960,7 @@
       "workbook_filename": ""
     },
     "page_layout_descr_file": "",
-    "plot_directory": "",
+    "plot_directory": "/home/vladis/Documents/",
     "spice_adjust_passive_values": false,
     "spice_external_command": "spice \"%I\"",
     "subpart_first_id": 65,
