@@ -1,0 +1,3 @@
+[submodule "board_test/mcu_libs"]
+	path = board_test/mcu_libs
+	url = https://github.com/VladisM/mcu_libs.git
