@@ -2,4 +2,7 @@
 /dwn
 /tools/
 /tools
+/build/
+/.cache/
+/.vscode/
 /toolchain.cmake
