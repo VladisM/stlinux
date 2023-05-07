@@ -13,16 +13,16 @@ This project using submodules. After clone use following to init them.
 
 ## Manufacturing board
 
-Gerber files required for manufacturing are stored in `ger` subdirectory.
+Gerber files required for manufacturing are stored in `board/ger` subdirectory.
 To manufacture board you shall just find yourself a suitable manufacturer
 and use latest archive.
 
-To generate BOM you shall use KiCad and revisit folder `sch`. All project
-files are stored there.
+To generate BOM you shall use KiCad and revisit folder `board/kicad`. All
+project files are stored there.
 
 After soldering board you should apply ftdi configuration into
 integrated UART bridge. Correct configuration is provided
-by the file `ftdi_configuration.xml`. For that you are going
+by the file `board/ftdi_configuration.xml`. For that you are going
 to need Windows PC and FT_PROG tool (available on their website).
 
 To test if board was correctly manufactured and most importantly
