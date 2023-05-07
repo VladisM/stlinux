@@ -27,6 +27,15 @@ to need Windows PC and FT_PROG tool (available on their website).
 
 To test if board was correctly manufactured and most importantly
 assembled. You can use software available in `board_test` folder.
+For more detailed information about testing board please
+visit [doc/readme/board_test.md](doc/readme/board_test.md).
+
+## Building U-Boot
+
+Configuration for this board is available in U-Boot linked to this
+repository as submodule. You are going to need cross compiler and make.
+For more detailed information please visit
+[doc/readme/uboot.md](doc/readme/uboot.md).
 
 ## License
 
