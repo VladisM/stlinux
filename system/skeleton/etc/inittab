@@ -1,0 +1,7 @@
+# /etc/inittab
+
+::sysinit:/etc/rc.d/startup
+
+ttySTM0::respawn:/sbin/getty -L ttySTM0 115200 vt100
+
+::shutdown:/etc/rc.d/shutdown

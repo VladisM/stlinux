@@ -1,0 +1,6 @@
+# Set the initial path
+export PATH=/usr/bin:/usr/sbin:/bin:/sbin
+
+# Setup some environment variables.
+export PAGER='/bin/more '
+export EDITOR='/bin/vi'

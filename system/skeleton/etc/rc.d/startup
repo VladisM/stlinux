@@ -1,0 +1,33 @@
+#!/bin/sh
+
+. /etc/rc.d/init.d/functions
+
+echo -n "Mounting proc: "
+mount -t proc proc /proc
+check_status
+
+echo -n "Mounting sysfs: "
+mount -t sysfs sysfs /sys
+check_status
+
+echo -n "Mounting tmpfs: "
+mount -t tmpfs tmpfs /tmp
+check_status
+
+echo -n "Mounting devtmpfs: "
+mount -t devtmpfs devtmpfs /dev
+check_status
+
+echo -n "Setting hostname: "
+hostname -F /etc/hostname
+check_status
+
+# Running startup scripts
+
+for i in /etc/rc.d/start/* ; do
+	if [ -x $i ]; then
+		$i start
+	fi
+done
+
+exit 0
