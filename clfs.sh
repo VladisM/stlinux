@@ -486,7 +486,7 @@ do_uboot_config () {
 	make ARCH=arm CROSS_COMPILE=arm-none-uclinux-uclibcgnueabi- O=${build_path} stm32f446-stlinux_defconfig
 	make ARCH=arm CROSS_COMPILE=arm-none-uclinux-uclibcgnueabi- O=${build_path} menuconfig
 	make ARCH=arm CROSS_COMPILE=arm-none-uclinux-uclibcgnueabi- O=${build_path} savedefconfig
-	mv ${build_dir}/defconfig ${src_path}/configs/stm32f446-stlinux_defconfig
+	mv ${build_path}/defconfig ${src_path}/configs/stm32f446-stlinux_defconfig
 	popd >> /dev/null
 }
 
