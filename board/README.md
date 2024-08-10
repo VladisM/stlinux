@@ -1,7 +1,7 @@
 # Board project files
 
-In this repository all files required for manufacturing board are gathered.
-Archives with gerber files are stored in `ger` directory. Project for kicad
-can be found in `kicad` directory. Configuration required for FTDI chip is
-in the root of this repository and for your convenience project file
-for STM32CubeMX is also present.
+In this directory all files required for manufacturing board are gathered.
+Archives with gerber files are stored in `CAM` directory. Project for KiCad
+can be found in `KiCad` directory. Configuration required for FTDI chip is
+next to the gerber files in `CAM` directory. There is also a CubeMX project
+located in `STM32CubeMX` folder.
