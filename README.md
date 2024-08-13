@@ -63,24 +63,79 @@ After some time, you can find all output images in `build/images/`. There are:
  * device tree - stm32f446-stlinux.dtb
  * system image - clfs.uImage
 
-Loading into board can be little bit tricky as at this moment, only working
-interface is UART. We can use for example xmodem.
+Bootloader shall be loaded to the board using STLink, and shall be written
+to the internal Flash memory of MCU.
 
-Write u-boot into internal flash of MCU using stlink for example. Once booted
-in u-boot console use xmodem protocol to send all other files, and write them to
-their partitions in external flash using mtd. For example, this is how to load
-kernel.
+```bash
+st-flash write build/images/u-boot.bin 0x08000000
+```
+
+Other components are by default loaded from QSPI Flash, there are two ways how
+to get them there.
+
+ * Using SD card
+ * Using serial port (legacy)
+
+### Loading QSPI Flash using serial port
+
+This method was used for first revision of board with nonworking SD card slot.
+If you have second revision of board, use SD card, it is much more faster.
+
+Once you are in u-boot console, you can use xmodem protocol to send all files
+and then write them to the QSPI Flash. For writing there is mtd command. Follow
+next code snippet.
 
 ```bash
 > loadx
-# send kernel file using your console emulator
+# send kernel file (zImage) using your console emulator
 > mtd erase kernel
 > mtd write kernel ${loadaddr}
+> loadx
+# send rootfs file (clfs.uImage) using your console emulator
+> mtd erase rootfs
+> mtd write rootfs ${loadaddr}
+> loadx
+# send dtb file (stm32f446-stlinux.dtb) using your console emulator
+> mtd erase rootfs
+> mtd write rootfs ${loadaddr}
 ```
 
-Repeat this approach for all required binaries, after all binaries are loaded
-you can execute boot by running bootcmd variable or reseting board, you should
-end up in working system. Login as root.
+Then you can simply reset the board or type `run bootcmd` and you should be
+welcomed by kernel boot log.
+
+### Loading QSPI Flash using SD card
+
+Compared to using serial port, this one is much much faster because data are
+transferred over SD card, not xmodem at 115200 bauds.
+
+Create one partition on your SD card, format it as FAT32, and copy there
+image files from build directory. Then insert your card to the board and run
+following commands.
+
+```bash
+> fatload mmc 0:1 ${loadaddr} zImage
+> mtd erase kernel
+> mtd write kernel ${loadaddr}
+> fatload mmc 0:1 ${loadaddr} clfs.uImage
+> mtd erase rootfs
+> mtd write rootfs ${loadaddr}
+> fatload mmc 0:1 ${loadaddr} stm32f446-stlinux.dtb
+> mtd erase rootfs
+> mtd write rootfs ${loadaddr}
+```
+
+After reset, your board will boot from QSPI Flash or you can simply type
+`run bootcmd`.
+
+### Loading directly from SD card
+
+If you are feeling lazy, just copypaste this to bootloader console. And it will boot.
+
+```bash
+fatload mmc 0:1 ${kernel_addr_l} zImage ; fatload mmc 0:1 ${rootfs_addr_l} clfs.uImage ; fatload mmc 0:1 ${dtb_addr_l} stm32f446-stlinux.dtb ; run set_args ; bootz ${kernel_addr_l} ${rootfs_addr_l} ${dtb_addr_l}
+```
+
+It will load everything from SD card into RAM and boot kernel that way.
 
 ## License
 
