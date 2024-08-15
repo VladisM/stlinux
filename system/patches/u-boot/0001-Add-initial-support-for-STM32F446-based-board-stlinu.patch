@@ -1,0 +1,717 @@
+From 5bf418a519c736094a2d6cf7da5876d2f4271847 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bc=2E=20Vladislav=20Mlejneck=C3=BD?= <v.mlejnecky@seznam.cz>
+Date: Sun, 7 May 2023 19:35:51 +0200
+Subject: [PATCH 01/15] Add initial support for STM32F446 based board - stlinux
+
+---
+ arch/arm/dts/stm32f4-pinctrl.dtsi             |  13 ++
+ arch/arm/dts/stm32f446-pinctrl.dtsi           |  44 +++++
+ arch/arm/dts/stm32f446-stlinux-u-boot.dtsi    | 180 ++++++++++++++++++
+ arch/arm/dts/stm32f446-stlinux.dts            |  62 ++++++
+ arch/arm/dts/stm32f446.dtsi                   | 165 ++++++++++++++++
+ arch/arm/mach-stm32/soc.c                     |   5 +
+ arch/arm/mach-stm32/stm32f4/Kconfig           |   4 +
+ board/st/stm32f446-stlinux/Kconfig            |  19 ++
+ board/st/stm32f446-stlinux/Makefile           |   1 +
+ .../st/stm32f446-stlinux/stm32f446-stlinux.c  |  45 +++++
+ configs/stm32f446-stlinux_defconfig           |  28 +++
+ drivers/pinctrl/pinctrl_stm32.c               |   1 +
+ include/configs/stm32f446-stlinux.h           |  12 ++
+ 13 files changed, 579 insertions(+)
+ create mode 100644 arch/arm/dts/stm32f446-pinctrl.dtsi
+ create mode 100644 arch/arm/dts/stm32f446-stlinux-u-boot.dtsi
+ create mode 100644 arch/arm/dts/stm32f446-stlinux.dts
+ create mode 100644 arch/arm/dts/stm32f446.dtsi
+ create mode 100644 board/st/stm32f446-stlinux/Kconfig
+ create mode 100644 board/st/stm32f446-stlinux/Makefile
+ create mode 100644 board/st/stm32f446-stlinux/stm32f446-stlinux.c
+ create mode 100644 configs/stm32f446-stlinux_defconfig
+ create mode 100644 include/configs/stm32f446-stlinux.h
+
+diff --git a/arch/arm/dts/stm32f4-pinctrl.dtsi b/arch/arm/dts/stm32f4-pinctrl.dtsi
+index 46815c965d..6829973bbb 100644
+--- a/arch/arm/dts/stm32f4-pinctrl.dtsi
++++ b/arch/arm/dts/stm32f4-pinctrl.dtsi
+@@ -140,6 +140,19 @@
+ 				};
+ 			};
+ 
++			usart2_pins_a: usart2-0 {
++				pins1 {
++					pinmux = <STM32_PINMUX('A', 2, AF7)>; /* USART1_TX */
++					bias-disable;
++					drive-push-pull;
++					slew-rate = <0>;
++				};
++				pins2 {
++					pinmux = <STM32_PINMUX('A', 3, AF7)>; /* USART1_RX */
++					bias-disable;
++				};
++			};
++
+ 			usart3_pins_a: usart3-0 {
+ 				pins1 {
+ 					pinmux = <STM32_PINMUX('B', 10, AF7)>; /* USART3_TX */
+diff --git a/arch/arm/dts/stm32f446-pinctrl.dtsi b/arch/arm/dts/stm32f446-pinctrl.dtsi
+new file mode 100644
+index 0000000000..c8b30cd9bf
+--- /dev/null
++++ b/arch/arm/dts/stm32f446-pinctrl.dtsi
+@@ -0,0 +1,44 @@
++// SPDX-License-Identifier: GPL-2.0+ OR X11
++/*
++ * Copyright 2017 - Alexandre Torgue <alexandre.torgue@st.com>
++ * Copyright 2023 - Vladislav Mlejnecký <v.mlejnecky@seznam.cz>
++ *
++ */
++
++#include "stm32f4-pinctrl.dtsi"
++
++&pinctrl {
++	compatible = "st,stm32f446-pinctrl";
++
++	gpioa: gpio@40020000 {
++		gpio-ranges = <&pinctrl 0 0 16>;
++	};
++
++	gpiob: gpio@40020400 {
++		gpio-ranges = <&pinctrl 0 16 16>;
++	};
++
++	gpioc: gpio@40020800 {
++		gpio-ranges = <&pinctrl 0 32 16>;
++	};
++
++	gpiod: gpio@40020c00 {
++		gpio-ranges = <&pinctrl 0 48 16>;
++	};
++
++	gpioe: gpio@40021000 {
++		gpio-ranges = <&pinctrl 0 64 16>;
++	};
++
++	gpiof: gpio@40021400 {
++		gpio-ranges = <&pinctrl 0 80 16>;
++	};
++
++	gpiog: gpio@40021800 {
++		gpio-ranges = <&pinctrl 0 96 16>;
++	};
++
++	gpioh: gpio@40021c00 {
++		gpio-ranges = <&pinctrl 0 112 2>;
++	};
++};
+diff --git a/arch/arm/dts/stm32f446-stlinux-u-boot.dtsi b/arch/arm/dts/stm32f446-stlinux-u-boot.dtsi
+new file mode 100644
+index 0000000000..8a4d52c6c3
+--- /dev/null
++++ b/arch/arm/dts/stm32f446-stlinux-u-boot.dtsi
+@@ -0,0 +1,180 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2017, STMicroelectronics - All Rights Reserved
++ * Author(s): Patrice Chotard, <patrice.chotard@foss.st.com> for STMicroelectronics.
++ *
++ * Copyright 2023 - Vladislav Mlejnecký <v.mlejnecky@seznam.cz>
++ */
++
++#include <dt-bindings/memory/stm32-sdram.h>
++/{
++	clocks {
++		u-boot,dm-pre-reloc;
++	};
++
++	aliases {
++		/* Aliases for gpios so as to use sequence */
++		gpio0 = &gpioa;
++		gpio1 = &gpiob;
++		gpio2 = &gpioc;
++		gpio3 = &gpiod;
++		gpio4 = &gpioe;
++		gpio5 = &gpiof;
++		gpio6 = &gpiog;
++		gpio7 = &gpioh;
++	};
++
++	soc {
++		u-boot,dm-pre-reloc;
++		fmc: fmc@A0000000 {
++			compatible = "st,stm32-fmc";
++			reg = <0xa0000000 0x1000>;
++			clocks = <&rcc 0 STM32F4_AHB3_CLOCK(FMC)>;
++			pinctrl-0 = <&fmc_pins>;
++			pinctrl-names = "default";
++			st,syscfg = <&syscfg>;
++			st,swp_fmc = <0>;
++			u-boot,dm-pre-reloc;
++
++			/*
++			 * Memory configuration from sdram datasheet
++			 * IS42S16160J-7
++			 */
++			bank0: bank@0 {
++			       st,sdram-control = /bits/ 8 <NO_COL_9
++							    NO_ROW_13
++							    MWIDTH_16
++							    BANKS_4
++							    CAS_2
++							    SDCLK_2
++							    RD_BURST_EN
++							    RD_PIPE_DL_0>;
++			       st,sdram-timing = /bits/ 8 <TMRD_2
++							   TXSR_7
++							   TRAS_4
++							   TRC_6
++							   TWR_2
++							   TRP_2 TRCD_2>;
++			       st,sdram-refcount = < 650 >;
++		       };
++		};
++	};
++};
++
++&clk_hse {
++	u-boot,dm-pre-reloc;
++};
++
++&gpioa {
++	u-boot,dm-pre-reloc;
++};
++
++&gpiob {
++	u-boot,dm-pre-reloc;
++};
++
++&gpioc {
++	u-boot,dm-pre-reloc;
++};
++
++&gpiod {
++	u-boot,dm-pre-reloc;
++};
++
++&gpioe {
++	u-boot,dm-pre-reloc;
++};
++
++&gpiof {
++	u-boot,dm-pre-reloc;
++};
++
++&gpiog {
++	u-boot,dm-pre-reloc;
++};
++
++&gpioh {
++	u-boot,dm-pre-reloc;
++};
++
++&pinctrl {
++	u-boot,dm-pre-reloc;
++
++	usart2_pins_a: usart2-0	{
++		u-boot,dm-pre-reloc;
++		pins1 {
++			u-boot,dm-pre-reloc;
++		};
++		pins2 {
++			u-boot,dm-pre-reloc;
++		};
++	};
++
++	fmc_pins: fmc@0 {
++		u-boot,dm-pre-reloc;
++		pins
++		{
++			pinmux = <STM32_PINMUX('D',10, AF12)>, /* D15 */
++				 <STM32_PINMUX('D', 9, AF12)>, /* D14 */
++				 <STM32_PINMUX('D', 8, AF12)>, /* D13 */
++				 <STM32_PINMUX('E',15, AF12)>, /* D12 */
++				 <STM32_PINMUX('E',14, AF12)>, /* D11 */
++				 <STM32_PINMUX('E',13, AF12)>, /* D10 */
++				 <STM32_PINMUX('E',12, AF12)>, /* D09 */
++				 <STM32_PINMUX('E',11, AF12)>, /* D08 */
++				 <STM32_PINMUX('E',10, AF12)>, /* D07 */
++				 <STM32_PINMUX('E', 9, AF12)>, /* D06 */
++				 <STM32_PINMUX('E', 8, AF12)>, /* D05 */
++				 <STM32_PINMUX('E', 7, AF12)>, /* D04 */
++				 <STM32_PINMUX('D', 1, AF12)>, /* D03 */
++				 <STM32_PINMUX('D', 0, AF12)>, /* D02 */
++				 <STM32_PINMUX('D',15, AF12)>, /* D01 */
++				 <STM32_PINMUX('D',14, AF12)>, /* D00 */
++
++				 <STM32_PINMUX('E', 0, AF12)>, /* NBL0 */
++				 <STM32_PINMUX('E', 1, AF12)>, /* NBL1 */
++
++				 <STM32_PINMUX('G', 5, AF12)>, /* BA1 */
++				 <STM32_PINMUX('G', 4, AF12)>, /* BA0 */
++
++				 <STM32_PINMUX('G', 2, AF12)>, /* A12 */
++				 <STM32_PINMUX('G', 1, AF12)>, /* A11 */
++				 <STM32_PINMUX('G', 0, AF12)>, /* A10 */
++				 <STM32_PINMUX('F',15, AF12)>, /* A09 */
++				 <STM32_PINMUX('F',14, AF12)>, /* A08 */
++				 <STM32_PINMUX('F',13, AF12)>, /* A07 */
++				 <STM32_PINMUX('F',12, AF12)>, /* A06 */
++				 <STM32_PINMUX('F', 5, AF12)>, /* A05 */
++				 <STM32_PINMUX('F', 4, AF12)>, /* A04 */
++				 <STM32_PINMUX('F', 3, AF12)>, /* A03 */
++				 <STM32_PINMUX('F', 2, AF12)>, /* A02 */
++				 <STM32_PINMUX('F', 1, AF12)>, /* A01 */
++				 <STM32_PINMUX('F', 0, AF12)>, /* A00 */
++
++				 <STM32_PINMUX('C', 2, AF12)>, /* SDNE0 */
++				 <STM32_PINMUX('C', 0, AF12)>, /* SDNWE */
++				 <STM32_PINMUX('F',11, AF12)>, /* SDNRAS */
++				 <STM32_PINMUX('G',15, AF12)>, /* SDNCAS */
++				 <STM32_PINMUX('C', 3, AF12)>, /* SDCKE0 */
++				 <STM32_PINMUX('G', 8, AF12)>; /* SDCLK */
++			slew-rate = <2>;
++			u-boot,dm-pre-reloc;
++		};
++	};
++};
++
++&pwrcfg {
++	u-boot,dm-pre-reloc;
++};
++
++&rcc {
++	u-boot,dm-pre-reloc;
++};
++
++&usart2 {
++	u-boot,dm-pre-reloc;
++};
++
++&timers5 {
++	u-boot,dm-pre-reloc;
++};
+diff --git a/arch/arm/dts/stm32f446-stlinux.dts b/arch/arm/dts/stm32f446-stlinux.dts
+new file mode 100644
+index 0000000000..1f2432619a
+--- /dev/null
++++ b/arch/arm/dts/stm32f446-stlinux.dts
+@@ -0,0 +1,62 @@
++// SPDX-License-Identifier: GPL-2.0+ OR X11
++/*
++ * Copyright 2015 - Maxime Coquelin <mcoquelin.stm32@gmail.com>
++ * Copyright 2023 - Vladislav Mlejnecký <v.mlejnecky@seznam.cz>
++ */
++
++/dts-v1/;
++#include "stm32f446.dtsi"
++#include "stm32f446-pinctrl.dtsi"
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	model = "STM32F446 STLinux";
++	compatible = "st,stm32f446";
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	memory@c0000000 {
++		device_type = "memory";
++		reg = <0xC0000000 0x2000000>;
++	};
++
++	aliases {
++		serial0 = &usart2;
++	};
++};
++
++&clk_hse {
++	clock-frequency = <25000000>;
++};
++
++&crc {
++	status = "okay";
++};
++
++&rtc {
++	assigned-clocks = <&rcc 1 CLK_RTC>;
++	assigned-clock-parents = <&rcc 1 CLK_LSI>;
++	status = "okay";
++};
++
++&timers5 {
++	/* Override timer5 to act as clockevent */
++	compatible = "st,stm32-timer";
++	interrupts = <50>;
++	status = "okay";
++	/delete-property/#address-cells;
++	/delete-property/#size-cells;
++	/delete-property/clock-names;
++	/delete-node/pwm;
++	/delete-node/timer@4;
++};
++
++&usart2 {
++	pinctrl-0 = <&usart2_pins_a>;
++	pinctrl-names = "default";
++	status = "okay";
++};
+diff --git a/arch/arm/dts/stm32f446.dtsi b/arch/arm/dts/stm32f446.dtsi
+new file mode 100644
+index 0000000000..ad7bf39a86
+--- /dev/null
++++ b/arch/arm/dts/stm32f446.dtsi
+@@ -0,0 +1,165 @@
++// SPDX-License-Identifier: GPL-2.0+ OR X11
++/*
++ * Copyright 2015 - Maxime Coquelin <mcoquelin.stm32@gmail.com>
++ * Copyright 2023 - Vladislav Mlejnecký <v.mlejnecky@seznam.cz>
++ */
++
++#include "armv7-m.dtsi"
++#include <dt-bindings/clock/stm32fx-clock.h>
++#include <dt-bindings/mfd/stm32f4-rcc.h>
++
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++
++	clocks {
++		clk_hse: clk-hse {
++			#clock-cells = <0>;
++			compatible = "fixed-clock";
++			clock-frequency = <0>;
++		};
++
++		clk_lsi: clk-lsi {
++			#clock-cells = <0>;
++			compatible = "fixed-clock";
++			clock-frequency = <32000>;
++		};
++	};
++
++	soc {
++		romem: efuse@1fff7800 {
++			compatible = "st,stm32f4-otp";
++			reg = <0x1fff7800 0x400>;
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ts_cal1: calib@22c {
++				reg = <0x22c 0x2>;
++			};
++			ts_cal2: calib@22e {
++				reg = <0x22e 0x2>;
++			};
++		};
++
++		timers5: timers@40000c00 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "st,stm32-timers";
++			reg = <0x40000C00 0x400>;
++			clocks = <&rcc 0 STM32F4_APB1_CLOCK(TIM5)>;
++			clock-names = "int";
++			status = "disabled";
++
++			pwm {
++				compatible = "st,stm32-pwm";
++				#pwm-cells = <3>;
++				status = "disabled";
++			};
++
++			timer@4 {
++				compatible = "st,stm32-timer-trigger";
++				reg = <4>;
++				status = "disabled";
++			};
++		};
++
++		rtc: rtc@40002800 {
++			compatible = "st,stm32-rtc";
++			reg = <0x40002800 0x400>;
++			clocks = <&rcc 1 CLK_RTC>;
++			assigned-clocks = <&rcc 1 CLK_RTC>;
++			assigned-clock-parents = <&rcc 1 CLK_LSI>;
++			interrupt-parent = <&exti>;
++			interrupts = <17 1>;
++			st,syscfg = <&pwrcfg 0x00 0x100>;
++			status = "disabled";
++		};
++
++		iwdg: watchdog@40003000 {
++			compatible = "st,stm32-iwdg";
++			reg = <0x40003000 0x400>;
++			clocks = <&clk_lsi>;
++			clock-names = "lsi";
++			status = "disabled";
++		};
++
++		usart2: serial@40004400 {
++			compatible = "st,stm32-uart";
++			reg = <0x40004400 0x400>;
++			interrupts = <38>;
++			clocks = <&rcc 0 STM32F4_APB1_CLOCK(UART2)>;
++			status = "disabled";
++		};
++
++		syscfg: syscon@40013800 {
++			compatible = "st,stm32-syscfg", "syscon";
++			reg = <0x40013800 0x400>;
++		};
++
++		exti: interrupt-controller@40013c00 {
++			compatible = "st,stm32-exti";
++			interrupt-controller;
++			#interrupt-cells = <2>;
++			reg = <0x40013C00 0x400>;
++			interrupts = <1>, <2>, <3>, <6>, <7>, <8>, <9>, <10>, <23>, <40>, <41>, <42>, <62>, <76>;
++		};
++
++		pwrcfg: power-config@40007000 {
++			compatible = "st,stm32-power-config", "syscon";
++			reg = <0x40007000 0x400>;
++		};
++
++		crc: crc@40023000 {
++			compatible = "st,stm32f4-crc";
++			reg = <0x40023000 0x400>;
++			clocks = <&rcc 0 STM32F4_AHB1_CLOCK(CRC)>;
++			status = "disabled";
++		};
++
++		rcc: rcc@40023800 {
++			#reset-cells = <1>;
++			#clock-cells = <2>;
++			compatible = "st,stm32f42xx-rcc", "st,stm32-rcc";
++			reg = <0x40023800 0x400>;
++			clocks = <&clk_hse>;
++			st,syscfg = <&pwrcfg>;
++			assigned-clocks = <&rcc 1 CLK_HSE_RTC>;
++			assigned-clock-rates = <1000000>;
++		};
++
++		dma1: dma-controller@40026000 {
++			compatible = "st,stm32-dma";
++			reg = <0x40026000 0x400>;
++			interrupts = <11>,
++				     <12>,
++				     <13>,
++				     <14>,
++				     <15>,
++				     <16>,
++				     <17>,
++				     <47>;
++			clocks = <&rcc 0 STM32F4_AHB1_CLOCK(DMA1)>;
++			#dma-cells = <4>;
++		};
++
++		dma2: dma-controller@40026400 {
++			compatible = "st,stm32-dma";
++			reg = <0x40026400 0x400>;
++			interrupts = <56>,
++				     <57>,
++				     <58>,
++				     <59>,
++				     <60>,
++				     <68>,
++				     <69>,
++				     <70>;
++			clocks = <&rcc 0 STM32F4_AHB1_CLOCK(DMA2)>;
++			#dma-cells = <4>;
++			st,mem2mem;
++		};
++	};
++};
++
++&systick {
++	clocks = <&rcc 1 SYSTICK>;
++	status = "okay";
++};
+diff --git a/arch/arm/mach-stm32/soc.c b/arch/arm/mach-stm32/soc.c
+index 0bd8d7b22c..890ef5c955 100644
+--- a/arch/arm/mach-stm32/soc.c
++++ b/arch/arm/mach-stm32/soc.c
+@@ -22,8 +22,13 @@ int arch_cpu_init(void)
+ 		O_I_WB_RD_WR_ALLOC, REGION_512MB },
+ #endif
+ 
++#if defined(CONFIG_TARGET_STM32F446_STLINUX)
++		{ 0xc0000000, REGION_1, XN_DIS, PRIV_RW_USR_RW,
++		O_I_WB_RD_WR_ALLOC, REGION_32MB },
++#else
+ 		{ 0x90000000, REGION_1, XN_DIS, PRIV_RW_USR_RW,
+ 		SHARED_WRITE_BUFFERED, REGION_256MB },
++#endif
+ 
+ #if defined(CONFIG_STM32F7) || defined(CONFIG_STM32H7)
+ 		{ 0xC0000000, REGION_0, XN_DIS, PRIV_RW_USR_RW,
+diff --git a/arch/arm/mach-stm32/stm32f4/Kconfig b/arch/arm/mach-stm32/stm32f4/Kconfig
+index e8fae4de40..609dfcbe35 100644
+--- a/arch/arm/mach-stm32/stm32f4/Kconfig
++++ b/arch/arm/mach-stm32/stm32f4/Kconfig
+@@ -6,11 +6,15 @@ config TARGET_STM32F429_DISCOVERY
+ config TARGET_STM32F429_EVALUATION
+ 	bool "STM32F429 Evaluation board"
+ 
++config TARGET_STM32F446_STLINUX
++	bool "STM32F446 STLinux"
++
+ config TARGET_STM32F469_DISCOVERY
+ 	bool "STM32F469 Discovery board"
+ 
+ source "board/st/stm32f429-discovery/Kconfig"
+ source "board/st/stm32f429-evaluation/Kconfig"
++source "board/st/stm32f446-stlinux/Kconfig"
+ source "board/st/stm32f469-discovery/Kconfig"
+ 
+ endif
+diff --git a/board/st/stm32f446-stlinux/Kconfig b/board/st/stm32f446-stlinux/Kconfig
+new file mode 100644
+index 0000000000..8d126d7f2e
+--- /dev/null
++++ b/board/st/stm32f446-stlinux/Kconfig
+@@ -0,0 +1,19 @@
++if TARGET_STM32F446_STLINUX
++
++config SYS_BOARD
++	string
++	default "stm32f446-stlinux"
++
++config SYS_VENDOR
++	string
++	default "st"
++
++config SYS_SOC
++	string
++	default "stm32f4"
++
++config SYS_CONFIG_NAME
++	string
++	default "stm32f446-stlinux"
++
++endif
+diff --git a/board/st/stm32f446-stlinux/Makefile b/board/st/stm32f446-stlinux/Makefile
+new file mode 100644
+index 0000000000..17797d8382
+--- /dev/null
++++ b/board/st/stm32f446-stlinux/Makefile
+@@ -0,0 +1 @@
++obj-y	:= stm32f446-stlinux.o
+diff --git a/board/st/stm32f446-stlinux/stm32f446-stlinux.c b/board/st/stm32f446-stlinux/stm32f446-stlinux.c
+new file mode 100644
+index 0000000000..f9e6232c24
+--- /dev/null
++++ b/board/st/stm32f446-stlinux/stm32f446-stlinux.c
+@@ -0,0 +1,45 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright 2023 - Vladislav Mlejnecký <v.mlejnecky@seznam.cz>
++ */
++
++#include <common.h>
++#include <dm.h>
++#include <env.h>
++#include <init.h>
++#include <log.h>
++#include <asm/global_data.h>
++
++#include <asm/io.h>
++#include <asm/arch/stm32.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++int dram_init(void)
++{
++	int rv;
++	struct udevice *dev;
++
++	rv = uclass_get_device(UCLASS_RAM, 0, &dev);
++	if (rv) {
++		debug("DRAM init failed: %d\n", rv);
++		return rv;
++	}
++
++	if (fdtdec_setup_mem_size_base() != 0)
++		rv = -EINVAL;
++
++	return rv;
++}
++
++int dram_init_banksize(void)
++{
++	fdtdec_setup_memory_banksize();
++
++	return 0;
++}
++
++int board_init(void)
++{
++	return 0;
++}
+diff --git a/configs/stm32f446-stlinux_defconfig b/configs/stm32f446-stlinux_defconfig
+new file mode 100644
+index 0000000000..2a8b7e737e
+--- /dev/null
++++ b/configs/stm32f446-stlinux_defconfig
+@@ -0,0 +1,28 @@
++CONFIG_ARM=y
++CONFIG_ARCH_STM32=y
++CONFIG_TEXT_BASE=0x08000000
++CONFIG_SYS_MALLOC_LEN=0x0200000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_HAS_CUSTOM_SYS_INIT_SP_ADDR=y
++CONFIG_CUSTOM_SYS_INIT_SP_ADDR=0x20020000
++CONFIG_DEFAULT_DEVICE_TREE="stm32f446-stlinux"
++CONFIG_SYS_PROMPT="STLinux U-Boot > "
++CONFIG_STM32F4=y
++CONFIG_TARGET_STM32F446_STLINUX=y
++CONFIG_SYS_LOAD_ADDR=0x90400000
++CONFIG_BOOTDELAY=3
++# CONFIG_DISPLAY_CPUINFO is not set
++# CONFIG_DISPLAY_BOARDINFO is not set
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PBSIZE=1050
++CONFIG_CMD_IMLS=y
++# CONFIG_CMD_SETEXPR is not set
++CONFIG_CMD_TIMER=y
++CONFIG_OF_CONTROL=y
++CONFIG_OF_EMBED=y
++# CONFIG_NET is not set
++# CONFIG_MMC is not set
++CONFIG_MTD_NOR_FLASH=y
++CONFIG_STM32_FLASH=y
++CONFIG_SYS_MAX_FLASH_SECT=12
++CONFIG_SYS_MAX_FLASH_BANKS=2
+diff --git a/drivers/pinctrl/pinctrl_stm32.c b/drivers/pinctrl/pinctrl_stm32.c
+index b755fa42b4..25b7712f2e 100644
+--- a/drivers/pinctrl/pinctrl_stm32.c
++++ b/drivers/pinctrl/pinctrl_stm32.c
+@@ -486,6 +486,7 @@ static struct pinctrl_ops stm32_pinctrl_ops = {
+ 
+ static const struct udevice_id stm32_pinctrl_ids[] = {
+ 	{ .compatible = "st,stm32f429-pinctrl" },
++	{ .compatible = "st,stm32f446-pinctrl" },
+ 	{ .compatible = "st,stm32f469-pinctrl" },
+ 	{ .compatible = "st,stm32f746-pinctrl" },
+ 	{ .compatible = "st,stm32f769-pinctrl" },
+diff --git a/include/configs/stm32f446-stlinux.h b/include/configs/stm32f446-stlinux.h
+new file mode 100644
+index 0000000000..08540d65e6
+--- /dev/null
++++ b/include/configs/stm32f446-stlinux.h
+@@ -0,0 +1,12 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright 2023 - Vladislav Mlejnecký <v.mlejnecky@seznam.cz>
++ */
++
++#ifndef __CONFIG_H
++#define __CONFIG_H
++
++#define CFG_SYS_FLASH_BASE		0x08000000
++#define CFG_SYS_HZ_CLOCK		1000000	/* Timer is clocked at 1MHz */
++
++#endif /* __CONFIG_H */
+-- 
+2.46.0
+

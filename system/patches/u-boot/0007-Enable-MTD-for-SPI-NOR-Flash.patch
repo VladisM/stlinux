@@ -1,0 +1,22 @@
+From c784b9c9060bddec704783b895a551d68eee6868 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bc=2E=20Vladislav=20Mlejneck=C3=BD?= <v.mlejnecky@seznam.cz>
+Date: Wed, 24 May 2023 20:17:33 +0200
+Subject: [PATCH 07/15] Enable MTD for SPI NOR Flash
+
+---
+ configs/stm32f446-stlinux_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/configs/stm32f446-stlinux_defconfig b/configs/stm32f446-stlinux_defconfig
+index 8edc5c4a5e..b81d5d990e 100644
+--- a/configs/stm32f446-stlinux_defconfig
++++ b/configs/stm32f446-stlinux_defconfig
+@@ -42,3 +42,5 @@ CONFIG_SPI_FLASH=y
+ CONFIG_SPI_FLASH_ISSI=y
+ CONFIG_SF_DEFAULT_SPEED=10000000
+ CONFIG_CMD_MTD=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_SPI_FLASH_SFDP_SUPPORT=y
+-- 
+2.46.0
+

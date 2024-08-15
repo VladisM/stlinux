@@ -1,0 +1,299 @@
+From f23904a68f69a57f0f391ee8fcaddb8ad60c7678 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bc=2E=20Vladislav=20Mlejneck=C3=BD?= <v.mlejnecky@seznam.cz>
+Date: Sun, 10 Sep 2023 12:19:10 +0200
+Subject: [PATCH 2/3] add support for stlinux board
+
+---
+ arch/arm/boot/dts/Makefile                   |   1 +
+ arch/arm/boot/dts/stm32f446-stlinux.dts      | 147 +++++++++++++++++++
+ arch/arm/configs/stm32f446-stlinux_defconfig | 112 ++++++++++++++
+ 3 files changed, 260 insertions(+)
+ create mode 100644 arch/arm/boot/dts/stm32f446-stlinux.dts
+ create mode 100644 arch/arm/configs/stm32f446-stlinux_defconfig
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index efe4152e5846..4a9284debcca 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -1216,6 +1216,7 @@ dtb-$(CONFIG_ARCH_STI) += \
+ 	stih418-b2264.dtb
+ dtb-$(CONFIG_ARCH_STM32) += \
+ 	stm32f429-disco.dtb \
++	stm32f446-stlinux.dtb \
+ 	stm32f469-disco.dtb \
+ 	stm32f746-disco.dtb \
+ 	stm32f769-disco.dtb \
+diff --git a/arch/arm/boot/dts/stm32f446-stlinux.dts b/arch/arm/boot/dts/stm32f446-stlinux.dts
+new file mode 100644
+index 000000000000..8369ba04fb4d
+--- /dev/null
++++ b/arch/arm/boot/dts/stm32f446-stlinux.dts
+@@ -0,0 +1,147 @@
++// SPDX-License-Identifier: GPL-2.0+ OR X11
++/*
++ * Copyright 2015 - Maxime Coquelin <mcoquelin.stm32@gmail.com>
++ * Copyright 2023 - Vladislav Mlejnecký <v.mlejnecky@seznam.cz>
++ */
++
++/dts-v1/;
++#include "stm32f446.dtsi"
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	model = "STM32F446 STLinux";
++	compatible = "st,stm32f446";
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++		tick-timer = "timers5";
++	};
++
++	memory@c0000000 {
++		device_type = "memory";
++		reg = <0xC0000000 0x2000000>;
++	};
++
++	aliases {
++		serial0 = &usart2;
++	};
++
++	main_vreg_3V3: main_vreg_3V3 {
++		compatible = "regulator-fixed";
++		regulator-name = "main_vreg_3V3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		led_user_0 {
++			label = "led_user_0";
++			gpios = <&gpioc 13 1>;
++		};
++
++		led_user_1 {
++			label = "led_user_1";
++			gpios = <&gpioa 1 1>;
++		};
++	};
++};
++
++&pinctrl {
++	usart2_pins: usart2-0 {
++		pins1 {
++			pinmux = <STM32_PINMUX('A', 2, AF7)>; /* USART2_TX */
++			bias-disable;
++			drive-push-pull;
++			slew-rate = <0>;
++		};
++		pins2 {
++			pinmux = <STM32_PINMUX('A', 3, AF7)>; /* USART2_RX */
++			bias-disable;
++		};
++	};
++
++	qspi_pins: qspi@0 {
++		pins {
++			pinmux = <STM32_PINMUX('D', 3, AF9)>, /* CLK */
++				 <STM32_PINMUX('B', 6, AF10)>, /* BK1_NCS */
++				 <STM32_PINMUX('F', 8, AF10)>, /* BK1_IO0 */
++				 <STM32_PINMUX('F', 9, AF10)>, /* BK1_IO1 */
++				 <STM32_PINMUX('F', 7, AF9)>, /* BK1_IO2 */
++				 <STM32_PINMUX('F', 6, AF9)>; /* BK1_IO3 */
++			slew-rate = <2>;
++		};
++	};
++
++	i2c1_pins: i2c1 {
++		pins {
++			pinmux = <STM32_PINMUX('B', 9, AF4)>, /* I2C1_SDA */
++					<STM32_PINMUX('B', 8, AF4)>; /* I2C1_SCL */
++			bias-disable;
++			drive-open-drain;
++			slew-rate = <3>;
++		};
++	};
++};
++
++&clk_hse {
++	clock-frequency = <25000000>;
++};
++
++&crc {
++	status = "okay";
++};
++
++&qspi {
++	status = "okay";
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&qspi_pins>;
++
++	qflash0: qflash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "issi,is25lp064", "jedec,spi-nor";
++		spi-max-frequency = <45000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
++		reg = <0>;
++	};
++};
++
++&rtc {
++	assigned-clocks = <&rcc 1 CLK_RTC>;
++	assigned-clock-parents = <&rcc 1 CLK_LSI>;
++	status = "okay";
++};
++
++&timers5 {
++	compatible = "st,stm32-timer";
++	interrupts = <50>;
++	status = "okay";
++	/delete-property/#address-cells;
++	/delete-property/#size-cells;
++	/delete-property/clock-names;
++	/delete-node/pwm;
++	/delete-node/timer@4;
++};
++
++&usart2 {
++	pinctrl-0 = <&usart2_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++&i2c1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++	clock-frequency = <100000>;
++	status = "okay";
++
++	eeprom@50 {
++		compatible = "atmel,24c04";
++		reg = <0x50>;
++	};
++};
+diff --git a/arch/arm/configs/stm32f446-stlinux_defconfig b/arch/arm/configs/stm32f446-stlinux_defconfig
+new file mode 100644
+index 000000000000..a89495e38cec
+--- /dev/null
++++ b/arch/arm/configs/stm32f446-stlinux_defconfig
+@@ -0,0 +1,112 @@
++CONFIG_NO_HZ_IDLE=y
++CONFIG_HIGH_RES_TIMERS=y
++CONFIG_PREEMPT=y
++CONFIG_LOG_BUF_SHIFT=16
++CONFIG_BLK_DEV_INITRD=y
++CONFIG_CC_OPTIMIZE_FOR_SIZE=y
++# CONFIG_UID16 is not set
++# CONFIG_BASE_FULL is not set
++# CONFIG_FUTEX is not set
++# CONFIG_EPOLL is not set
++# CONFIG_SIGNALFD is not set
++# CONFIG_EVENTFD is not set
++# CONFIG_AIO is not set
++CONFIG_EMBEDDED=y
++# CONFIG_MMU is not set
++CONFIG_ARCH_STM32=y
++# CONFIG_MACH_STM32F746 is not set
++# CONFIG_MACH_STM32F769 is not set
++# CONFIG_MACH_STM32H743 is not set
++CONFIG_CPU_V7M_NUM_IRQ=240
++CONFIG_SET_MEM_PARAM=y
++CONFIG_DRAM_BASE=0xc0000000
++CONFIG_DRAM_SIZE=0x02000000
++# CONFIG_ATAGS is not set
++# CONFIG_SUSPEND is not set
++CONFIG_PM=y
++# CONFIG_GCC_PLUGINS is not set
++CONFIG_BINFMT_FLAT=y
++# CONFIG_COREDUMP is not set
++# CONFIG_VM_EVENT_COUNTERS is not set
++CONFIG_NET=y
++CONFIG_UNIX=y
++CONFIG_INET=y
++# CONFIG_IPV6 is not set
++# CONFIG_WIRELESS is not set
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
++# CONFIG_FW_LOADER is not set
++CONFIG_MTD=y
++CONFIG_MTD_CMDLINE_PARTS=y
++CONFIG_MTD_CFI=y
++CONFIG_MTD_CFI_INTELEXT=y
++CONFIG_MTD_CFI_AMDSTD=y
++CONFIG_MTD_CFI_STAA=y
++CONFIG_MTD_PHYSMAP=y
++CONFIG_MTD_PHYSMAP_OF=y
++CONFIG_MTD_SPI_NOR=y
++CONFIG_EEPROM_AT24=y
++CONFIG_EEPROM_93CX6=y
++# CONFIG_KEYBOARD_ATKBD is not set
++CONFIG_KEYBOARD_GPIO=y
++# CONFIG_INPUT_MOUSE is not set
++CONFIG_SERIO_LIBPS2=y
++# CONFIG_VT is not set
++# CONFIG_UNIX98_PTYS is not set
++# CONFIG_LEGACY_PTYS is not set
++CONFIG_SERIAL_STM32=y
++CONFIG_SERIAL_STM32_CONSOLE=y
++CONFIG_SERIAL_NONSTANDARD=y
++# CONFIG_HW_RANDOM is not set
++CONFIG_I2C=y
++CONFIG_I2C_CHARDEV=y
++CONFIG_I2C_STM32F4=y
++CONFIG_I2C_STM32F7=y
++CONFIG_SPI=y
++CONFIG_SPI_STM32=y
++CONFIG_SPI_STM32_QSPI=y
++CONFIG_GPIO_STMPE=y
++# CONFIG_HWMON is not set
++CONFIG_WATCHDOG=y
++CONFIG_MFD_STMPE=y
++CONFIG_REGULATOR=y
++CONFIG_REGULATOR_FIXED_VOLTAGE=y
++# CONFIG_HID_SUPPORT is not set
++# CONFIG_USB_SUPPORT is not set
++CONFIG_MMC=y
++CONFIG_MMC_DEBUG=y
++CONFIG_MMC_ARMMMCI=y
++# CONFIG_MMC_STM32_SDMMC is not set
++CONFIG_NEW_LEDS=y
++CONFIG_LEDS_CLASS=y
++CONFIG_LEDS_GPIO=y
++CONFIG_LEDS_TRIGGERS=y
++CONFIG_LEDS_TRIGGER_HEARTBEAT=y
++CONFIG_RTC_CLASS=y
++CONFIG_RTC_DRV_STM32=y
++CONFIG_DMADEVICES=y
++CONFIG_STM32_DMA=y
++CONFIG_STM32_DMAMUX=y
++CONFIG_STM32_MDMA=y
++# CONFIG_VIRTIO_MENU is not set
++CONFIG_IIO=y
++CONFIG_STM32_ADC_CORE=y
++CONFIG_STM32_ADC=y
++# CONFIG_FILE_LOCKING is not set
++# CONFIG_DNOTIFY is not set
++# CONFIG_INOTIFY_USER is not set
++# CONFIG_NETWORK_FILESYSTEMS is not set
++CONFIG_NLS=y
++CONFIG_CRYPTO=y
++CONFIG_CRYPTO_CRC32C=y
++CONFIG_CRC16=y
++CONFIG_CRC_ITU_T=y
++CONFIG_CRC7=y
++CONFIG_PRINTK_TIME=y
++# CONFIG_DEBUG_BUGVERBOSE is not set
++CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT=y
++CONFIG_MAGIC_SYSRQ=y
++# CONFIG_SLUB_DEBUG is not set
++CONFIG_DEBUG_LL=y
++CONFIG_DEBUG_UART_PHYS=0x40004400
++CONFIG_EARLY_PRINTK=y
+-- 
+2.46.0
+

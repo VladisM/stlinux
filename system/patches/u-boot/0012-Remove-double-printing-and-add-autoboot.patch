@@ -1,0 +1,23 @@
+From 78ff70cb30fd0c79999a876fbc960320e870b05f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bc=2E=20Vladislav=20Mlejneck=C3=BD?= <v.mlejnecky@seznam.cz>
+Date: Thu, 15 Jun 2023 00:03:48 +0200
+Subject: [PATCH 12/15] Remove double printing and add autoboot
+
+---
+ board/st/stm32f446-stlinux/stlinux.env | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/board/st/stm32f446-stlinux/stlinux.env b/board/st/stm32f446-stlinux/stlinux.env
+index bad06cfa70..824cf8eb78 100644
+--- a/board/st/stm32f446-stlinux/stlinux.env
++++ b/board/st/stm32f446-stlinux/stlinux.env
+@@ -1,4 +1,5 @@
+-bootargs=console=ttySTM0,115200n8 earlycon=stm32,0x40004400 earlyprintk
++bootargs=console=ttySTM0,115200n8 earlycon=stm32,0x40004400
+ kernel_addr_l=0xc1000000
+ rootfs_addr_l=0xc1400000
+ dtb_addr_l=0xc1c00000
++bootcmd=mtd read kernel ${kernel_addr_l}; mtd read rootfs ${rootfs_addr_l}; mtd read dtb ${dtb_addr_l}; bootz ${kernel_addr_l} ${rootfs_addr_l} ${dtb_addr_l}
+-- 
+2.46.0
+

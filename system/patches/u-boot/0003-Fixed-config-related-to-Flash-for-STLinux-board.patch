@@ -1,0 +1,25 @@
+From 9a92baf7eade8afa4376ebf1e2f1e04f0d718ae4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bc=2E=20Vladislav=20Mlejneck=C3=BD?= <v.mlejnecky@seznam.cz>
+Date: Mon, 8 May 2023 19:39:33 +0200
+Subject: [PATCH 03/15] Fixed config related to Flash for STLinux board
+
+---
+ configs/stm32f446-stlinux_defconfig | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/configs/stm32f446-stlinux_defconfig b/configs/stm32f446-stlinux_defconfig
+index 2a8b7e737e..32b596c425 100644
+--- a/configs/stm32f446-stlinux_defconfig
++++ b/configs/stm32f446-stlinux_defconfig
+@@ -24,5 +24,6 @@ CONFIG_OF_EMBED=y
+ # CONFIG_MMC is not set
+ CONFIG_MTD_NOR_FLASH=y
+ CONFIG_STM32_FLASH=y
+-CONFIG_SYS_MAX_FLASH_SECT=12
+-CONFIG_SYS_MAX_FLASH_BANKS=2
++CONFIG_SYS_MAX_FLASH_SECT=6
++CONFIG_SYS_MAX_FLASH_BANKS=1
++CONFIG_SYS_CONSOLE_INFO_QUIET=y
+-- 
+2.46.0
+

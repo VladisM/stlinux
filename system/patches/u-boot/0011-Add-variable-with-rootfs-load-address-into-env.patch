@@ -1,0 +1,21 @@
+From 1448413c6bd4cc179a83a811f8bdd25b15885b5d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bc=2E=20Vladislav=20Mlejneck=C3=BD?= <v.mlejnecky@seznam.cz>
+Date: Wed, 14 Jun 2023 00:00:31 +0200
+Subject: [PATCH 11/15] Add variable with rootfs load address into env
+
+---
+ board/st/stm32f446-stlinux/stlinux.env | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/board/st/stm32f446-stlinux/stlinux.env b/board/st/stm32f446-stlinux/stlinux.env
+index e5f327c36f..bad06cfa70 100644
+--- a/board/st/stm32f446-stlinux/stlinux.env
++++ b/board/st/stm32f446-stlinux/stlinux.env
+@@ -1,3 +1,4 @@
+ bootargs=console=ttySTM0,115200n8 earlycon=stm32,0x40004400 earlyprintk
+ kernel_addr_l=0xc1000000
++rootfs_addr_l=0xc1400000
+ dtb_addr_l=0xc1c00000
+-- 
+2.46.0
+

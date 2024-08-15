@@ -1,0 +1,113 @@
+From 701f91f4aab2abb74abcdfa4f25e619385c0fddb Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bc=2E=20Vladislav=20Mlejneck=C3=BD?= <v.mlejnecky@seznam.cz>
+Date: Sun, 14 May 2023 21:17:07 +0200
+Subject: [PATCH 06/15] Made SPI NOR Flash working
+
+---
+ arch/arm/dts/stm32f446-stlinux-u-boot.dtsi | 40 ++++++++++++++++++++++
+ arch/arm/mach-stm32/soc.c                  |  4 ++-
+ configs/stm32f446-stlinux_defconfig        | 12 ++++++-
+ 3 files changed, 54 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/dts/stm32f446-stlinux-u-boot.dtsi b/arch/arm/dts/stm32f446-stlinux-u-boot.dtsi
+index 8a4d52c6c3..cad6847325 100644
+--- a/arch/arm/dts/stm32f446-stlinux-u-boot.dtsi
++++ b/arch/arm/dts/stm32f446-stlinux-u-boot.dtsi
+@@ -58,6 +58,32 @@
+ 			       st,sdram-refcount = < 650 >;
+ 		       };
+ 		};
++
++		qspi: spi@A0001000 {
++			u-boot,dm-pre-reloc;
++			compatible = "st,stm32f469-qspi";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0xa0001000 0x1000>, <0x90000000 0x800000>;
++			reg-names = "qspi", "qspi_mm";
++			interrupts = <92>;
++			spi-max-frequency = <45000000>;
++			clocks = <&rcc 0 STM32F4_AHB3_CLOCK(QSPI)>;
++			resets = <&rcc STM32F4_AHB3_RESET(QSPI)>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&qspi_pins>;
++
++			qflash0: is25lp064@0 {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				compatible = "issi,is25lp064", "jedec,spi-nor";
++				spi-max-frequency = <45000000>;
++				spi-tx-bus-width = <4>;
++				spi-rx-bus-width = <4>;
++				reg = <0>;
++				u-boot,dm-pre-reloc;
++			};
++		};
+ 	};
+ };
+ 
+@@ -161,6 +187,20 @@
+ 			u-boot,dm-pre-reloc;
+ 		};
+ 	};
++
++	qspi_pins: qspi@0 {
++		u-boot,dm-pre-reloc;
++		pins {
++			pinmux = <STM32_PINMUX('D', 3, AF9)>, /* CLK */
++				 <STM32_PINMUX('B', 6, AF10)>, /* BK1_NCS */
++				 <STM32_PINMUX('F', 8, AF10)>, /* BK1_IO0 */
++				 <STM32_PINMUX('F', 9, AF10)>, /* BK1_IO1 */
++				 <STM32_PINMUX('F', 7, AF9)>, /* BK1_IO2 */
++				 <STM32_PINMUX('F', 6, AF9)>; /* BK1_IO3 */
++			slew-rate = <2>;
++			u-boot,dm-pre-reloc;
++		};
++	};
+ };
+ 
+ &pwrcfg {
+diff --git a/arch/arm/mach-stm32/soc.c b/arch/arm/mach-stm32/soc.c
+index 890ef5c955..3b99a6c3af 100644
+--- a/arch/arm/mach-stm32/soc.c
++++ b/arch/arm/mach-stm32/soc.c
+@@ -23,7 +23,9 @@ int arch_cpu_init(void)
+ #endif
+ 
+ #if defined(CONFIG_TARGET_STM32F446_STLINUX)
+-		{ 0xc0000000, REGION_1, XN_DIS, PRIV_RW_USR_RW,
++		{ 0x90000000, REGION_1, XN_DIS, PRIV_RO_USR_RO,
++		O_I_WB_RD_WR_ALLOC, REGION_8MB },
++		{ 0xc0000000, REGION_2, XN_DIS, PRIV_RW_USR_RW,
+ 		O_I_WB_RD_WR_ALLOC, REGION_32MB },
+ #else
+ 		{ 0x90000000, REGION_1, XN_DIS, PRIV_RW_USR_RW,
+diff --git a/configs/stm32f446-stlinux_defconfig b/configs/stm32f446-stlinux_defconfig
+index 76852e0388..8edc5c4a5e 100644
+--- a/configs/stm32f446-stlinux_defconfig
++++ b/configs/stm32f446-stlinux_defconfig
+@@ -25,10 +25,20 @@ CONFIG_OF_EMBED=y
+ CONFIG_MTD_NOR_FLASH=y
+ CONFIG_STM32_FLASH=y
+ CONFIG_SYS_MAX_FLASH_SECT=6
+-CONFIG_SYS_MAX_FLASH_BANKS=1
++CONFIG_SYS_MAX_FLASH_BANKS=2
+ CONFIG_SYS_CONSOLE_INFO_QUIET=y
+ CONFIG_LED=y
+ CONFIG_LED_GPIO=y
+ CONFIG_CMD_LED=y
+ CONFIG_HAS_BOARD_SIZE_LIMIT=y
+ CONFIG_BOARD_SIZE_LIMIT=262144
++CONFIG_SPI=y
++CONFIG_STM32_QSPI=y
++CONFIG_DM_SPI=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH=y
++CONFIG_SPI_FLASH_ISSI=y
++CONFIG_SF_DEFAULT_SPEED=10000000
++CONFIG_CMD_MTD=y
+-- 
+2.46.0
+
