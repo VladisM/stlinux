@@ -550,6 +550,7 @@ do_uclibc_get_path () {
 		["url"]="https://downloads.uclibc-ng.org/releases/1.0.43/uClibc-ng-1.0.43.tar.gz"
 		["archive"]="${downloads}/uClibc-ng-1.0.43.tar.gz"
 		["source"]="${sources}/uClibc-ng-1.0.43"
+		["patch"]="${patches}/uclibc"
 		["build"]="${build_dir}/uclibc"
 		["defconfig"]="${configs}/uclibc.config"
 	)
@@ -572,6 +573,20 @@ do_uclibc_unpack () {
 
 	if [ ! -d ${source_path} ]; then
 		tar -xvf ${archive} -C ${sources}
+		do_uclibc_patch
+	fi
+}
+
+do_uclibc_patch () {
+	local source_path=$(do_uclibc_get_path source)
+	local patch_path=$(do_uclibc_get_path patch)
+
+	if [ ! -f ${source_path} ]; then
+		pushd ${source_path}
+		for patch in $(ls "${patch_path}"/*.patch | sort); do
+			patch -Np1 -i "$patch"
+		done
+		popd
 	fi
 }
 
@@ -1036,6 +1051,7 @@ do_busybox_get_path () {
 		["url"]="https://busybox.net/downloads/busybox-1.36.1.tar.bz2"
 		["archive"]="${downloads}/busybox-1.36.1.tar.bz2"
 		["source"]="${sources}/busybox-1.36.1"
+		["patch"]="${patches}/busybox"
 		["install"]="${staging}"
 		["defconfig"]="${configs}/busybox.config"
 	)
@@ -1058,6 +1074,20 @@ do_busybox_unpack () {
 
 	if [ ! -d ${source_path} ]; then
 		tar -xvf ${archive} -C ${sources}
+		do_busybox_patch
+	fi
+}
+
+do_busybox_patch () {
+	local source_path=$(do_busybox_get_path source)
+	local patch_path=$(do_busybox_get_path patch)
+
+	if [ ! -f ${source_path} ]; then
+		pushd ${source_path}
+		for patch in $(ls "${patch_path}"/*.patch | sort); do
+			patch -Np1 -i "$patch"
+		done
+		popd
 	fi
 }
 

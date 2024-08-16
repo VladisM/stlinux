@@ -1,0 +1,25 @@
+From ee9323f729bbc8f0455956daaed3c87d8f639025 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Vladislav=20Mlejneck=C3=BD?= <geek@vladism.cz>
+Date: Fri, 16 Aug 2024 23:42:54 +0200
+Subject: [PATCH] Fix menuconfig issue with ncurses
+
+---
+ extra/config/lxdialog/check-lxdialog.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/extra/config/lxdialog/check-lxdialog.sh b/extra/config/lxdialog/check-lxdialog.sh
+index 9d2a4c585..66bfcb549 100644
+--- a/extra/config/lxdialog/check-lxdialog.sh
++++ b/extra/config/lxdialog/check-lxdialog.sh
+@@ -43,7 +43,7 @@ trap "rm -f $tmp" 0 1 2 3 15
+ check() {
+         $cc -x c - -o $tmp 2>/dev/null <<'EOF'
+ #include CURSES_LOC
+-main() {}
++int main() {}
+ EOF
+ 	if [ $? != 0 ]; then
+ 	    echo " *** Unable to find the ncurses libraries or the"       1>&2
+-- 
+2.46.0
+
