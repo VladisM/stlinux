@@ -732,7 +732,7 @@ do_elf2flt () {
 
 do_uboot_handle_source_path () {
 	if [ -z ${replacement_uboot} ]; then
-		echo "${sources}/u-boot-v2023.04"
+		echo "${sources}/u-boot-v2024.07"
 	else
 		echo ${replacement_uboot}
 	fi
@@ -750,8 +750,8 @@ do_uboot_get_path () {
 	local component="$1"
 
 	declare -A paths=(
-		["url"]="https://source.denx.de/u-boot/u-boot/-/archive/v2023.04/u-boot-v2023.04.tar.gz"
-		["archive"]="${downloads}/u-boot-v2023.04.tar.gz"
+		["url"]="https://source.denx.de/u-boot/u-boot/-/archive/v2024.07/u-boot-v2024.07.tar.gz"
+		["archive"]="${downloads}/u-boot-v2024.07.tar.gz"
 		["source"]=$(do_uboot_handle_source_path)
 		["patch"]=$(do_uboot_handle_patch_path)
 		["build"]="${build_dir}/u-boot"
