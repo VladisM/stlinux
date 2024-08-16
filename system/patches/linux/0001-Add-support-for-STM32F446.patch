@@ -1,11 +1,11 @@
-From 5f093e6a0128955bb17cb76f77c4b5cc2568d044 Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Bc=2E=20Vladislav=20Mlejneck=C3=BD?= <v.mlejnecky@seznam.cz>
-Date: Sun, 10 Sep 2023 12:17:59 +0200
-Subject: [PATCH 1/3] Added support for STM32F446 MCU
+From 1812440bfaaa03bcbf23084f077166516aa706cf Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Vladislav=20Mlejneck=C3=BD?= <geek@vladism.cz>
+Date: Fri, 16 Aug 2024 14:12:46 +0200
+Subject: [PATCH 1/2] Add support for STM32F446
 
 ---
  arch/arm/Kconfig.debug                    |    2 +-
- arch/arm/boot/dts/stm32f446.dtsi          |  782 ++++++++++++++
+ arch/arm/boot/dts/st/stm32f446.dtsi       |  782 ++++++++++++++
  arch/arm/mach-stm32/Kconfig               |    4 +
  arch/arm/mach-stm32/board-dt.c            |    1 +
  drivers/clk/Kconfig                       |    2 +-
@@ -14,7 +14,7 @@ Subject: [PATCH 1/3] Added support for STM32F446 MCU
  drivers/pinctrl/stm32/Makefile            |    1 +
  drivers/pinctrl/stm32/pinctrl-stm32f446.c | 1168 +++++++++++++++++++++
  9 files changed, 2061 insertions(+), 2 deletions(-)
- create mode 100644 arch/arm/boot/dts/stm32f446.dtsi
+ create mode 100644 arch/arm/boot/dts/st/stm32f446.dtsi
  create mode 100644 drivers/pinctrl/stm32/pinctrl-stm32f446.c
 
 diff --git a/arch/arm/Kconfig.debug b/arch/arm/Kconfig.debug
@@ -30,19 +30,19 @@ index b407b7b9b715..aa87f6bd5272 100644
  		select DEBUG_STM32_UART
  		help
  		  Say Y here if you want kernel low-level debugging support
-diff --git a/arch/arm/boot/dts/stm32f446.dtsi b/arch/arm/boot/dts/stm32f446.dtsi
+diff --git a/arch/arm/boot/dts/st/stm32f446.dtsi b/arch/arm/boot/dts/st/stm32f446.dtsi
 new file mode 100644
-index 000000000000..78dc9d57ff15
+index 000000000000..78ae331cc2ff
 --- /dev/null
-+++ b/arch/arm/boot/dts/stm32f446.dtsi
++++ b/arch/arm/boot/dts/st/stm32f446.dtsi
 @@ -0,0 +1,782 @@
 +// SPDX-License-Identifier: GPL-2.0+ OR X11
 +/*
 + * Copyright 2015 - Maxime Coquelin <mcoquelin.stm32@gmail.com>
-+ * Copyright 2023 - Vladislav Mlejnecký <v.mlejnecky@seznam.cz>
++ * Copyright 2023 - Vladislav Mlejnecký <geek@vladism.cz>
 + */
 +
-+#include "armv7-m.dtsi"
++#include "../armv7-m.dtsi"
 +#include <dt-bindings/clock/stm32fx-clock.h>
 +#include <dt-bindings/mfd/stm32f4-rcc.h>
 +#include <dt-bindings/pinctrl/stm32-pinfunc.h>
@@ -834,7 +834,7 @@ index 98145031586f..8524429d559e 100644
  	bool "STMicroelectronics STM32F469"
  	default y
 diff --git a/arch/arm/mach-stm32/board-dt.c b/arch/arm/mach-stm32/board-dt.c
-index 2ccaa11aaa56..f88417490f66 100644
+index 5dcc4ddd1a56..ec3e5f66b0a2 100644
 --- a/arch/arm/mach-stm32/board-dt.c
 +++ b/arch/arm/mach-stm32/board-dt.c
 @@ -13,6 +13,7 @@
@@ -846,10 +846,10 @@ index 2ccaa11aaa56..f88417490f66 100644
  	"st,stm32f746",
  	"st,stm32f769",
 diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
-index 1eef05bb1f99..3c9fe06934e4 100644
+index c30099866174..1e91388fe485 100644
 --- a/drivers/clk/Kconfig
 +++ b/drivers/clk/Kconfig
-@@ -396,7 +396,7 @@ config COMMON_CLK_STM32MP157
+@@ -416,7 +416,7 @@ config COMMON_CLK_STM32MP157
  	  Support for stm32mp157 SoC family clocks
  
  config COMMON_CLK_STM32F
@@ -859,7 +859,7 @@ index 1eef05bb1f99..3c9fe06934e4 100644
  	  Support for stm32f4 and stm32f7 SoC families clocks
  
 diff --git a/drivers/clk/clk-stm32f4.c b/drivers/clk/clk-stm32f4.c
-index 473dfe632cc5..a5f40b11cee4 100644
+index 07c13ebe327d..ecf857475254 100644
 --- a/drivers/clk/clk-stm32f4.c
 +++ b/drivers/clk/clk-stm32f4.c
 @@ -131,6 +131,76 @@ static const struct stm32f4_gate_data stm32f429_gates[] __initconst = {
@@ -963,7 +963,7 @@ index 473dfe632cc5..a5f40b11cee4 100644
  static const struct stm32f4_pll_data stm32f469_pll[MAX_PLL_DIV] = {
  	{ PLL,	   50, { "pll",	     "pll-q",    "pll-r"    } },
  	{ PLL_I2S, 50, { "plli2s-p", "plli2s-q", "plli2s-r" } },
-@@ -1197,6 +1277,8 @@ static const struct stm32_aux_clk stm32f429_aux_clk[] = {
+@@ -1198,6 +1278,8 @@ static const struct stm32_aux_clk stm32f429_aux_clk[] = {
  	},
  };
  
@@ -972,7 +972,7 @@ index 473dfe632cc5..a5f40b11cee4 100644
  static const struct stm32_aux_clk stm32f469_aux_clk[] = {
  	{
  		CLK_LCD, "lcd-tft", lcd_parent, ARRAY_SIZE(lcd_parent),
-@@ -1569,6 +1651,16 @@ static const struct stm32f4_clk_data stm32f429_clk_data = {
+@@ -1570,6 +1652,16 @@ static const struct stm32f4_clk_data stm32f429_clk_data = {
  	.aux_clk_num	= ARRAY_SIZE(stm32f429_aux_clk),
  };
  
@@ -989,7 +989,7 @@ index 473dfe632cc5..a5f40b11cee4 100644
  static const struct stm32f4_clk_data stm32f469_clk_data = {
  	.end_primary	= END_PRIMARY_CLK,
  	.gates_data	= stm32f469_gates,
-@@ -1604,6 +1696,10 @@ static const struct of_device_id stm32f4_of_match[] = {
+@@ -1605,6 +1697,10 @@ static const struct of_device_id stm32f4_of_match[] = {
  		.compatible = "st,stm32f42xx-rcc",
  		.data = &stm32f429_clk_data
  	},
@@ -1000,7 +1000,7 @@ index 473dfe632cc5..a5f40b11cee4 100644
  	{
  		.compatible = "st,stm32f469-rcc",
  		.data = &stm32f469_clk_data
-@@ -1899,6 +1995,7 @@ static void __init stm32f4_rcc_init(struct device_node *np)
+@@ -1900,6 +1996,7 @@ static void __init stm32f4_rcc_init(struct device_node *np)
  	iounmap(base);
  }
  CLK_OF_DECLARE_DRIVER(stm32f42xx_rcc, "st,stm32f42xx-rcc", stm32f4_rcc_init);
@@ -1009,7 +1009,7 @@ index 473dfe632cc5..a5f40b11cee4 100644
  CLK_OF_DECLARE_DRIVER(stm32f746_rcc, "st,stm32f746-rcc", stm32f4_rcc_init);
  CLK_OF_DECLARE_DRIVER(stm32f769_rcc, "st,stm32f769-rcc", stm32f4_rcc_init);
 diff --git a/drivers/pinctrl/stm32/Kconfig b/drivers/pinctrl/stm32/Kconfig
-index d532f3c6f670..b2ee8c837ab8 100644
+index 2656d3d3ae40..d44380f761c2 100644
 --- a/drivers/pinctrl/stm32/Kconfig
 +++ b/drivers/pinctrl/stm32/Kconfig
 @@ -16,6 +16,12 @@ config PINCTRL_STM32F429
@@ -1026,7 +1026,7 @@ index d532f3c6f670..b2ee8c837ab8 100644
  	bool "STMicroelectronics STM32F469 pin control" if COMPILE_TEST && !MACH_STM32F469
  	depends on OF && HAS_IOMEM
 diff --git a/drivers/pinctrl/stm32/Makefile b/drivers/pinctrl/stm32/Makefile
-index 619629ee9944..f43de5d2fcad 100644
+index 7b17464d8de1..1120af411064 100644
 --- a/drivers/pinctrl/stm32/Makefile
 +++ b/drivers/pinctrl/stm32/Makefile
 @@ -4,6 +4,7 @@ obj-$(CONFIG_PINCTRL_STM32) += pinctrl-stm32.o

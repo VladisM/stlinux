@@ -860,7 +860,7 @@ do_uboot () {
 
 do_linux_handle_source_path () {
 	if [ -z ${replacement_linux} ]; then
-		echo "${sources}/linux-6.3"
+		echo "${sources}/linux-6.6"
 	else
 		echo ${replacement_linux}
 	fi
@@ -878,8 +878,8 @@ do_linux_get_path () {
 	local component="$1"
 
 	declare -A paths=(
-		["url"]="https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.3.tar.gz"
-		["archive"]="${downloads}/linux-6.3.tar.gz"
+		["url"]="https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.tar.gz"
+		["archive"]="${downloads}/linux-6.6.tar.gz"
 		["source"]=$(do_linux_handle_source_path)
 		["patch"]=$(do_linux_handle_patch_path)
 		["build"]="${build_dir}/linux"
@@ -985,8 +985,8 @@ do_linux_dtb () {
 	pushd ${source_path} >> /dev/null
 
 	make ARCH=arm CROSS_COMPILE=arm-none-uclinux-uclibcgnueabi- O=${build_path} stm32f446-stlinux_defconfig
-	make ARCH=arm CROSS_COMPILE=arm-none-uclinux-uclibcgnueabi- O=${build_path} -j ${core_count} stm32f446-stlinux.dtb
-	cp ${build_path}/arch/arm/boot/dts/stm32f446-stlinux.dtb ${dtb_path}
+	make ARCH=arm CROSS_COMPILE=arm-none-uclinux-uclibcgnueabi- O=${build_path} -j ${core_count} st/stm32f446-stlinux.dtb
+	cp ${build_path}/arch/arm/boot/dts/st/stm32f446-stlinux.dtb ${dtb_path}
 
 	popd >> /dev/null
 }

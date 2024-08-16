@@ -1,21 +1,21 @@
-From f23904a68f69a57f0f391ee8fcaddb8ad60c7678 Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Bc=2E=20Vladislav=20Mlejneck=C3=BD?= <v.mlejnecky@seznam.cz>
-Date: Sun, 10 Sep 2023 12:19:10 +0200
-Subject: [PATCH 2/3] add support for stlinux board
+From b171c030d94983600caca71c6103be5ba1936ac8 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Vladislav=20Mlejneck=C3=BD?= <geek@vladism.cz>
+Date: Fri, 16 Aug 2024 14:13:40 +0200
+Subject: [PATCH 2/2] Add support for board based on STM32F446
 
 ---
- arch/arm/boot/dts/Makefile                   |   1 +
- arch/arm/boot/dts/stm32f446-stlinux.dts      | 147 +++++++++++++++++++
- arch/arm/configs/stm32f446-stlinux_defconfig | 112 ++++++++++++++
- 3 files changed, 260 insertions(+)
- create mode 100644 arch/arm/boot/dts/stm32f446-stlinux.dts
+ arch/arm/boot/dts/st/Makefile                |   1 +
+ arch/arm/boot/dts/st/stm32f446-stlinux.dts   | 188 +++++++++++++++++++
+ arch/arm/configs/stm32f446-stlinux_defconfig | 112 +++++++++++
+ 3 files changed, 301 insertions(+)
+ create mode 100644 arch/arm/boot/dts/st/stm32f446-stlinux.dts
  create mode 100644 arch/arm/configs/stm32f446-stlinux_defconfig
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index efe4152e5846..4a9284debcca 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -1216,6 +1216,7 @@ dtb-$(CONFIG_ARCH_STI) += \
+diff --git a/arch/arm/boot/dts/st/Makefile b/arch/arm/boot/dts/st/Makefile
+index 44b264c399ec..84332fe77708 100644
+--- a/arch/arm/boot/dts/st/Makefile
++++ b/arch/arm/boot/dts/st/Makefile
+@@ -20,6 +20,7 @@ dtb-$(CONFIG_ARCH_STI) += \
  	stih418-b2264.dtb
  dtb-$(CONFIG_ARCH_STM32) += \
  	stm32f429-disco.dtb \
@@ -23,12 +23,12 @@ index efe4152e5846..4a9284debcca 100644
  	stm32f469-disco.dtb \
  	stm32f746-disco.dtb \
  	stm32f769-disco.dtb \
-diff --git a/arch/arm/boot/dts/stm32f446-stlinux.dts b/arch/arm/boot/dts/stm32f446-stlinux.dts
+diff --git a/arch/arm/boot/dts/st/stm32f446-stlinux.dts b/arch/arm/boot/dts/st/stm32f446-stlinux.dts
 new file mode 100644
-index 000000000000..8369ba04fb4d
+index 000000000000..69308872dc0e
 --- /dev/null
-+++ b/arch/arm/boot/dts/stm32f446-stlinux.dts
-@@ -0,0 +1,147 @@
++++ b/arch/arm/boot/dts/st/stm32f446-stlinux.dts
+@@ -0,0 +1,188 @@
 +// SPDX-License-Identifier: GPL-2.0+ OR X11
 +/*
 + * Copyright 2015 - Maxime Coquelin <mcoquelin.stm32@gmail.com>
@@ -115,6 +115,37 @@ index 000000000000..8369ba04fb4d
 +			slew-rate = <3>;
 +		};
 +	};
++
++	sdio_pins: sdio-pins-0 {
++		pins {
++			pinmux = <STM32_PINMUX('C', 8, AF12)>, /* SDIO_D0 */
++					<STM32_PINMUX('C', 9, AF12)>, /* SDIO_D1 */
++					<STM32_PINMUX('C', 10, AF12)>, /* SDIO_D2 */
++					<STM32_PINMUX('C', 11, AF12)>, /* SDIO_D3 */
++					<STM32_PINMUX('C', 12, AF12)>, /* SDIO_CK */
++					<STM32_PINMUX('D', 2, AF12)>; /* SDIO_CMD */
++			drive-push-pull;
++			slew-rate = <2>;
++		};
++	};
++
++	sdio_pins_od: sdio-pins-od-0 {
++		pins1 {
++			pinmux = <STM32_PINMUX('C', 8, AF12)>, /* SDIO_D0 */
++					<STM32_PINMUX('C', 9, AF12)>, /* SDIO_D1 */
++					<STM32_PINMUX('C', 10, AF12)>, /* SDIO_D2 */
++					<STM32_PINMUX('C', 11, AF12)>, /* SDIO_D3 */
++					<STM32_PINMUX('C', 12, AF12)>; /* SDIO_CK */
++			drive-push-pull;
++			slew-rate = <2>;
++		};
++
++		pins2 {
++			pinmux = <STM32_PINMUX('D', 2, AF12)>; /* SDIO_CMD */
++			drive-open-drain;
++			slew-rate = <2>;
++		};
++	};
 +};
 +
 +&clk_hse {
@@ -166,8 +197,8 @@ index 000000000000..8369ba04fb4d
 +};
 +
 +&i2c1 {
-+	pinctrl-names = "default";
 +	pinctrl-0 = <&i2c1_pins>;
++	pinctrl-names = "default";
 +	clock-frequency = <100000>;
 +	status = "okay";
 +
@@ -175,6 +206,16 @@ index 000000000000..8369ba04fb4d
 +		compatible = "atmel,24c04";
 +		reg = <0x50>;
 +	};
++};
++
++&sdio {
++	status = "okay";
++	cd-gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
++	pinctrl-names = "default", "opendrain";
++	pinctrl-0 = <&sdio_pins>;
++	pinctrl-1 = <&sdio_pins_od>;
++	bus-width = <4>;
++	vmmc-supply = <&main_vreg_3V3>;
 +};
 diff --git a/arch/arm/configs/stm32f446-stlinux_defconfig b/arch/arm/configs/stm32f446-stlinux_defconfig
 new file mode 100644
