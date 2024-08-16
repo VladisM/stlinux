@@ -114,7 +114,7 @@ usage () {
 }
 
 parse_args () {
-	VALID_ARGS=$(getopt -o "j:hv" -l help,build:,config:,clean: -- "$@")
+	VALID_ARGS=$(getopt -o "j:hv" -l help,build:,config:,clean:,use-u-boot:,use-linux: -- "$@")
 	if [[ $? -ne 0 ]]; then
 		exit 1;
 	fi
@@ -1282,11 +1282,11 @@ main () {
 					;;
 
 				u-boot)
-					do_uboot ${config}
+					do_uboot ${action}
 					;;
 
 				linux)
-					do_linux ${config}
+					do_linux ${action}
 					;;
 
 				busybox)
@@ -1358,12 +1358,7 @@ main () {
 					;;
 
 				all)
-					rm -rf ${build_dir}
-					if [ -d $(do_busybox_get_path source) ]; then
-						pushd $(do_busybox_get_path source) >> /dev/null
-						make mrproper
-						popd >> /dev/null
-					fi
+					rm -rf ${tmp_dir}
 					;;
 
 				*)

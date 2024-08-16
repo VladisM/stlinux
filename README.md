@@ -120,8 +120,8 @@ following commands.
 > mtd erase rootfs
 > mtd write rootfs ${loadaddr}
 > fatload mmc 0:1 ${loadaddr} stm32f446-stlinux.dtb
-> mtd erase rootfs
-> mtd write rootfs ${loadaddr}
+> mtd erase dtb
+> mtd write dtb ${loadaddr}
 ```
 
 After reset, your board will boot from QSPI Flash or you can simply type
