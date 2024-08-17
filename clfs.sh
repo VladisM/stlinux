@@ -130,12 +130,12 @@ parse_args () {
 				;;
 
 			--use-u-boot)
-				replacement_uboot=$2
+				replacement_uboot=$(realpath $2)
 				shift 2
 				;;
 
 			--use-linux)
-				replacement_linux=$2
+				replacement_linux=$(realpath $2)
 				shift 2
 				;;
 
