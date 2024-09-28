@@ -1,27 +1,40 @@
-From 1812440bfaaa03bcbf23084f077166516aa706cf Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Vladislav=20Mlejneck=C3=BD?= <geek@vladism.cz>
-Date: Fri, 16 Aug 2024 14:12:46 +0200
-Subject: [PATCH 1/2] Add support for STM32F446
+From 9ed04d0ff1eaf777464a7f456bf5951436a98632 Mon Sep 17 00:00:00 2001
+From: VladisM <geek@vladism.cz>
+Date: Sat, 28 Sep 2024 23:42:40 +0200
+Subject: [PATCH 1/2] Add support for STM32F446 MCU
 
 ---
- arch/arm/Kconfig.debug                    |    2 +-
- arch/arm/boot/dts/st/stm32f446.dtsi       |  782 ++++++++++++++
- arch/arm/mach-stm32/Kconfig               |    4 +
- arch/arm/mach-stm32/board-dt.c            |    1 +
- drivers/clk/Kconfig                       |    2 +-
- drivers/clk/clk-stm32f4.c                 |   97 ++
- drivers/pinctrl/stm32/Kconfig             |    6 +
- drivers/pinctrl/stm32/Makefile            |    1 +
- drivers/pinctrl/stm32/pinctrl-stm32f446.c | 1168 +++++++++++++++++++++
- 9 files changed, 2061 insertions(+), 2 deletions(-)
+ .../bindings/pinctrl/st,stm32-pinctrl.yaml    |    1 +
+ arch/arm/Kconfig.debug                        |    2 +-
+ arch/arm/boot/dts/st/stm32f446.dtsi           |  784 +++++++++++
+ arch/arm/mach-stm32/Kconfig                   |    4 +
+ arch/arm/mach-stm32/board-dt.c                |    1 +
+ drivers/clk/Kconfig                           |    2 +-
+ drivers/clk/clk-stm32f4.c                     |   97 ++
+ drivers/pinctrl/stm32/Kconfig                 |    6 +
+ drivers/pinctrl/stm32/Makefile                |    1 +
+ drivers/pinctrl/stm32/pinctrl-stm32f446.c     | 1168 +++++++++++++++++
+ 10 files changed, 2064 insertions(+), 2 deletions(-)
  create mode 100644 arch/arm/boot/dts/st/stm32f446.dtsi
  create mode 100644 drivers/pinctrl/stm32/pinctrl-stm32f446.c
 
+diff --git a/Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml b/Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml
+index e1eb45a9eda4..b0b8d9f0e00a 100644
+--- a/Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml
++++ b/Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml
+@@ -20,6 +20,7 @@ properties:
+   compatible:
+     enum:
+       - st,stm32f429-pinctrl
++      - st,stm32f446-pinctrl
+       - st,stm32f469-pinctrl
+       - st,stm32f746-pinctrl
+       - st,stm32f769-pinctrl
 diff --git a/arch/arm/Kconfig.debug b/arch/arm/Kconfig.debug
-index b407b7b9b715..aa87f6bd5272 100644
+index 7f47b4f335c3..8107782ce5b1 100644
 --- a/arch/arm/Kconfig.debug
 +++ b/arch/arm/Kconfig.debug
-@@ -1167,7 +1167,7 @@ choice
+@@ -1164,7 +1164,7 @@ choice
  
  	config STM32F4_DEBUG_UART
  		bool "Use STM32F4 UART for low-level debug"
@@ -32,10 +45,10 @@ index b407b7b9b715..aa87f6bd5272 100644
  		  Say Y here if you want kernel low-level debugging support
 diff --git a/arch/arm/boot/dts/st/stm32f446.dtsi b/arch/arm/boot/dts/st/stm32f446.dtsi
 new file mode 100644
-index 000000000000..78ae331cc2ff
+index 000000000000..197d438a0b75
 --- /dev/null
 +++ b/arch/arm/boot/dts/st/stm32f446.dtsi
-@@ -0,0 +1,782 @@
+@@ -0,0 +1,784 @@
 +// SPDX-License-Identifier: GPL-2.0+ OR X11
 +/*
 + * Copyright 2015 - Maxime Coquelin <mcoquelin.stm32@gmail.com>
@@ -569,12 +582,14 @@ index 000000000000..78ae331cc2ff
 +		syscfg: syscon@40013800 {
 +			compatible = "st,stm32-syscfg", "syscon";
 +			reg = <0x40013800 0x400>;
++			clocks = <&rcc 0 STM32F4_APB2_CLOCK(SYSCFG)>;
 +		};
 +
 +		exti: interrupt-controller@40013c00 {
 +			compatible = "st,stm32-exti";
 +			interrupt-controller;
 +			#interrupt-cells = <2>;
++			interrupt-parent = <&nvic>;
 +			reg = <0x40013C00 0x400>;
 +			interrupts = <1>, <2>, <3>, <6>, <7>, <8>, <9>, <10>, <23>, <40>, <41>, <42>, <62>, <76>;
 +		};
@@ -819,10 +834,10 @@ index 000000000000..78ae331cc2ff
 +	status = "okay";
 +};
 diff --git a/arch/arm/mach-stm32/Kconfig b/arch/arm/mach-stm32/Kconfig
-index 98145031586f..8524429d559e 100644
+index 630b992f32b1..d8352afe5a03 100644
 --- a/arch/arm/mach-stm32/Kconfig
 +++ b/arch/arm/mach-stm32/Kconfig
-@@ -23,6 +23,10 @@ config MACH_STM32F429
+@@ -24,6 +24,10 @@ config MACH_STM32F429
  	bool "STMicroelectronics STM32F429"
  	default y
  
@@ -846,11 +861,11 @@ index 5dcc4ddd1a56..ec3e5f66b0a2 100644
  	"st,stm32f746",
  	"st,stm32f769",
 diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
-index c30099866174..1e91388fe485 100644
+index 983ef4f36d8c..f541d9ebe8e1 100644
 --- a/drivers/clk/Kconfig
 +++ b/drivers/clk/Kconfig
-@@ -416,7 +416,7 @@ config COMMON_CLK_STM32MP157
- 	  Support for stm32mp157 SoC family clocks
+@@ -415,7 +415,7 @@ config COMMON_CLK_VC7
+ 	  and jitter attenuator ICs with fractional and integer dividers.
  
  config COMMON_CLK_STM32F
 -	def_bool COMMON_CLK && (MACH_STM32F429 || MACH_STM32F469 || MACH_STM32F746)

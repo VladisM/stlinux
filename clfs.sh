@@ -875,7 +875,7 @@ do_uboot () {
 
 do_linux_handle_source_path () {
 	if [ -z ${replacement_linux} ]; then
-		echo "${sources}/linux-6.6"
+		echo "${sources}/linux-6.11"
 	else
 		echo ${replacement_linux}
 	fi
@@ -893,8 +893,8 @@ do_linux_get_path () {
 	local component="$1"
 
 	declare -A paths=(
-		["url"]="https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.tar.gz"
-		["archive"]="${downloads}/linux-6.6.tar.gz"
+		["url"]="https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.11.tar.gz"
+		["archive"]="${downloads}/linux-6.11.tar.gz"
 		["source"]=$(do_linux_handle_source_path)
 		["patch"]=$(do_linux_handle_patch_path)
 		["build"]="${build_dir}/linux"
@@ -968,8 +968,9 @@ do_linux_headers () {
 
 	pushd ${source_path} >> /dev/null
 
-	make ARCH=arm INSTALL_HDR_PATH=${sysroot_path}/usr -j ${core_count} headers_install
-	make ARCH=arm mrproper
+	make ARCH=arm O=${build_path} stm32f446-stlinux_defconfig
+	make ARCH=arm O=${build_path} INSTALL_HDR_PATH=${sysroot_path}/usr -j ${core_count} headers_install
+	make ARCH=arm O=${build_path} mrproper
 
 	popd >> /dev/null
 }
